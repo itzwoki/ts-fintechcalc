@@ -1,0 +1,43 @@
+{
+  "name": "@waqas/fintechcalc",
+  "version": "1.0.0",
+  "description": "High precision financial calculation library",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itzwoki/ts-fintechcalc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/itzwoki/ts-fintechcalc/issues"
+  },
+  "homepage": "https://github.com/itzwoki/ts-fintechcalc#readme",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "dev": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "finance",
+    "fintech",
+    "amortization",
+    "compound-interest",
+    "insurance"
+  ],
+  "author": "Muhammad Waqas",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prettier": "^3.8.3",
+    "typescript": "^5.0.0",
+    "vitest": "^1.6.1"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  }
+}
