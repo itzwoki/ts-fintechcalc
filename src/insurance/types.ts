@@ -28,7 +28,8 @@ export interface RiskProfile {
 }
 
 export interface InsuranceRiders {
-  accidentalDeathBenefitRate?: number; // Dollars per $1,000 face amount
+  // Dollars per $1000 face amount
+  accidentalDeathBenefitRate?: number;
   waiverOfPremium?: boolean;
 }
 
@@ -36,12 +37,15 @@ export interface InsuranceInput {
   insuranceType: InsuranceType;
   age: number;
   faceAmount: number;
-  termYears?: number;  // Required for TERM_LIFE
+  // Required for TERM_LIFE
+  termYears?: number;
 
   riskProfile: RiskProfile;
-  
-  coverageDecreaseRate?: number;  // Annual decrease (e.g., 0.02 = 2%)
-  inflationAdjustment?: number;   // Coverage growth with inflation
+
+  // Annual decrease rate (0.02 is 2%)
+  coverageDecreaseRate?: number;
+  // Coverage growth with inflation
+  inflationAdjustment?: number;
   riders?: InsuranceRiders;
 
   roundingPolicy?: {
@@ -60,7 +64,8 @@ export interface InsuranceScheduleItem {
   cumulativePremiumsPaid: number;
   costPerThousandCoverage: number;
   riderPremium?: number;
-  cashValue?: number;  // For WHOLE_LIFE only
+  // For WHOLE_LIFE only
+  cashValue?: number;
 }
 
 export interface InsuranceResult {
@@ -75,8 +80,8 @@ export interface InsuranceResult {
   schedule: InsuranceScheduleItem[];
   riderPremium?: number;
   totalRiderCost?: number;
-  
-  // WHOLE_LIFE only
+
+  // For WHOLE_LIFE only
   projectedCashValue?: number;
 }
 

@@ -17,16 +17,16 @@ export type TaxAccount =
 
 export interface ContributionSchedule {
   annualAmount: number;
-  //0.02 for 2% annual raise
+  // 0.02 for 2% annual raise
   annualEscalation?: number;
   timing?: ContributionTiming;
 }
 
 export interface TaxConfig {
   accountType: TaxAccount;
-  // 0-1 year gains (ordinary income rates)
+  // 0-1 year gains
   shortTermRate?: number;
-  // 1+ year gains (preferential rates)
+  // 1+ year gains
   longTermRate?: number;
 }
 
@@ -59,7 +59,7 @@ export interface CompoundInterestScheduleItem {
   cumulativeContributions: number;
   cumulativeTaxes: number;
   nominalBalance: number;
-  // Inflation-adjusted
+  // inflation-adjusted
   realBalance: number;
 }
 
@@ -69,11 +69,11 @@ export interface CompoundInterestResult {
   totalInterestEarned: number;
   totalTaxesPaid: number;
   netGains: number;
-  // % return
+  // percent return
   nominalReturn: number;
-  // Inflation-adjusted return %
+  // inflation-adjusted return
   realReturn: number;
-  // What balance is worth in today's dollars
+  // purchasing power in today's dollars
   purchasingPowerValue: number;
   schedule: CompoundInterestScheduleItem[];
 }
@@ -90,7 +90,7 @@ export interface ScenarioItem {
 export interface ScenarioComparison {
   scenarios: ScenarioItem[];
   bestPerformer: string;
-  // Tax-deferred vs Taxable
+  // tax-deferred vs taxable
   taxSavings: number;
   inflationImpact: number;
 }

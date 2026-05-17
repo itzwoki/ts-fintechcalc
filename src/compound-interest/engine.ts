@@ -8,7 +8,7 @@ import {
   CompoundInterestScheduleItem
 } from "./types";
 
-// ✅ Get periods per year
+// Get periods per year
 function getPeriodsPerYear(freq: string): number {
   const freqMap: Record<string, number> = {
     "annual": 1,
@@ -20,11 +20,10 @@ function getPeriodsPerYear(freq: string): number {
   return freqMap[freq] || 12;
 }
 
-// ✅ Core compound interest calculation with contributions
+// Core compound interest calculation with contributions
 export function calculateCompoundInterest(
   input: CompoundInterestInput
 ): CompoundInterestResult {
-
   validateCompoundInterestInput(input);
 
   const {
@@ -45,27 +44,27 @@ export function calculateCompoundInterest(
   const infl = new Decimal(inflation);
 
   let balance = P;
-  let costBasis = P;  // Principal + contributions
+  // Principal plus contributions
+  let costBasis = P;
   let cumulativeContributions = P;
   let cumulativeTaxes = new Decimal(0);
   let totalInterestEarned = new Decimal(0);
 
   const schedule: CompoundInterestScheduleItem[] = [];
 
-  // ✅ Tax tracking: gains by year (year -> amount)
+  // Tax tracking: gains by year
   const gainsHistory: Map<number, Decimal> = new Map();
 
   for (let year = 1; year <= years; year++) {
-
     let yearlyContribution = new Decimal(0);
 
-    // ✅ Handle contributions with optional escalation
+    // Handle contributions with optional escalation
     if (contributions) {
       let baseAmount = new Decimal(contributions.annualAmount);
       const escalation = contributions.annualEscalation ?? 0;
 
       if (escalation > 0) {
-        // Escalate: year 1 = base, year 2 = base * (1 + esc), etc.
+        // Escalate annual contribution
         baseAmount = baseAmount.mul(
           new Decimal(1 + escalation).pow(year - 1)
         );
@@ -73,7 +72,7 @@ export function calculateCompoundInterest(
 
       yearlyContribution = baseAmount;
 
-      // Add contribution at start of period (before interest accrues)
+      // Add contribution at start of period
       if (contributions.timing !== "END_OF_PERIOD") {
         balance = balance.plus(yearlyContribution);
         costBasis = costBasis.plus(yearlyContribution);
@@ -81,8 +80,7 @@ export function calculateCompoundInterest(
       }
     }
 
-    // ✅ Calculate interest for the year
-    // FV = PV(1 + r/n)^n for one year
+    // Calculate interest for the year
     const periodicRate = r.div(n);
     const factor = periodicRate.plus(1).pow(n.toNumber());
     const yearEndBalance = balance.mul(factor);
@@ -91,17 +89,16 @@ export function calculateCompoundInterest(
     balance = yearEndBalance;
     totalInterestEarned = totalInterestEarned.plus(yearlyInterest);
 
-    // ✅ Track gains for tax calculation
+    // Track gains for tax calculation
     gainsHistory.set(year, yearlyInterest);
 
-    // ✅ Add contribution at end of period (after interest)
+    // Add contribution at end of period
     if (contributions?.timing === "END_OF_PERIOD") {
       balance = balance.plus(yearlyContribution);
       costBasis = costBasis.plus(yearlyContribution);
       cumulativeContributions = cumulativeContributions.plus(yearlyContribution);
     }
 
-    // ✅ Calculate taxes
     let yearlyTaxes = new Decimal(0);
     let shortTermGains = new Decimal(0);
     let longTermGains = new Decimal(0);
@@ -110,13 +107,13 @@ export function calculateCompoundInterest(
       // Short-term: gains from current year
       shortTermGains = yearlyInterest;
 
-      // Long-term: gains from prior years that have been held 1+ year
+      // Long-term: gains from prior years
       for (let priorYear = 1; priorYear < year; priorYear++) {
         const priorGains = gainsHistory.get(priorYear) ?? new Decimal(0);
         longTermGains = longTermGains.plus(priorGains);
       }
 
-      // Clear prior years from short-term (now all long-term)
+      // Reset gains history for long-term tracking
       gainsHistory.clear();
       gainsHistory.set(year, yearlyInterest);
 
@@ -131,54 +128,51 @@ export function calculateCompoundInterest(
       cumulativeTaxes = cumulativeTaxes.plus(yearlyTaxes);
     }
 
-    // ✅ Calculate real balance (inflation-adjusted)
     const inflationFactor = infl.plus(1).pow(year);
     const realBalance = balance.div(inflationFactor);
 
-    // ✅ Format output
     let outputInterest = yearlyInterest;
     let outputTaxes = yearlyTaxes;
     let outputBalance = balance;
     let outputRealBalance = realBalance;
     let outputContribution = yearlyContribution;
 
-    if (true) {  // Always apply rounding for output
-      outputInterest = applyRounding(
-        yearlyInterest,
-        decimalPlaces,
-        roundingPolicy.interest ?? "HALF_UP"
-      );
+    // Always apply rounding for output
+    outputInterest = applyRounding(
+      yearlyInterest,
+      decimalPlaces,
+      roundingPolicy.interest ?? "HALF_UP"
+    );
 
-      outputTaxes = applyRounding(
-        yearlyTaxes,
-        decimalPlaces,
-        roundingPolicy.tax ?? "HALF_UP"
-      );
+    outputTaxes = applyRounding(
+      yearlyTaxes,
+      decimalPlaces,
+      roundingPolicy.tax ?? "HALF_UP"
+    );
 
-      outputBalance = applyRounding(
-        balance,
-        decimalPlaces,
-        roundingPolicy.balance ?? "HALF_UP"
-      );
+    outputBalance = applyRounding(
+      balance,
+      decimalPlaces,
+      roundingPolicy.balance ?? "HALF_UP"
+    );
 
-      outputRealBalance = applyRounding(
-        realBalance,
-        decimalPlaces,
-        roundingPolicy.balance ?? "HALF_UP"
-      );
+    outputRealBalance = applyRounding(
+      realBalance,
+      decimalPlaces,
+      roundingPolicy.balance ?? "HALF_UP"
+    );
 
-      outputContribution = applyRounding(
-        yearlyContribution,
-        decimalPlaces,
-        roundingPolicy.balance ?? "HALF_UP"
-      );
-    }
+    outputContribution = applyRounding(
+      yearlyContribution,
+      decimalPlaces,
+      roundingPolicy.balance ?? "HALF_UP"
+    );
 
     schedule.push({
       year,
       contribution: outputContribution.toNumber(),
       interestEarned: outputInterest.toNumber(),
-      shortTermGains: shortTermGains.mul(10000).div(10000).toNumber(),  // Show gains, not taxes
+      shortTermGains: shortTermGains.mul(10000).div(10000).toNumber(),
       longTermGains: longTermGains.mul(10000).div(10000).toNumber(),
       taxesPaid: outputTaxes.toNumber(),
       balance: outputBalance.toNumber(),
@@ -189,12 +183,10 @@ export function calculateCompoundInterest(
     });
   }
 
-  // ✅ Calculate final metrics
   const finalBalance = balance;
   const netGains = finalBalance.minus(costBasis);
   const nominalReturn = finalBalance.minus(cumulativeContributions).div(cumulativeContributions).mul(100);
-  
-  // Real return: account for inflation
+
   const inflationAdjustment = infl.plus(1).pow(years);
   const realBalance = finalBalance.div(inflationAdjustment);
   const realReturn = realBalance.minus(cumulativeContributions).div(cumulativeContributions).mul(100);
@@ -225,10 +217,8 @@ export function calculateCompoundInterest(
       decimalPlaces,
       roundingPolicy.balance ?? "HALF_UP"
     ).toNumber(),
-    // Total return: (gains / total cost basis) * 100
-    // Total cost basis = principal + all contributions
+    // Total return: gains relative to total cost basis
     nominalReturn: nominalReturn.toNumber(),
-    // Real return accounts for inflation
     realReturn: realReturn.toNumber(),
     purchasingPowerValue: applyRounding(
       realBalance,

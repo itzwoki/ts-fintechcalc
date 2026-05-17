@@ -3,10 +3,10 @@ import { HealthStatus, OccupationRisk, MedicalHistory, AgeBand, RiskProfile } fr
 // Health status multipliers
 export function getHealthMultiplier(health: HealthStatus): number {
   const multipliers: Record<HealthStatus, number> = {
-    "EXCELLENT": 0.75,   // 25% discount
-    "GOOD": 1.0,         // Standard
-    "FAIR": 1.35,        // 35% premium
-    "POOR": 1.85         // 85% premium
+    "EXCELLENT": 0.75,
+    "GOOD": 1.0,
+    "FAIR": 1.35,
+    "POOR": 1.85
   };
   return multipliers[health];
 }
@@ -14,9 +14,9 @@ export function getHealthMultiplier(health: HealthStatus): number {
 // Occupation risk multipliers
 export function getOccupationMultiplier(risk: OccupationRisk): number {
   const multipliers: Record<OccupationRisk, number> = {
-    "LOW": 0.90,         // 10% discount (safe jobs)
-    "MEDIUM": 1.0,       // Standard
-    "HIGH": 1.60         // 60% premium (dangerous jobs)
+    "LOW": 0.90,
+    "MEDIUM": 1.0,
+    "HIGH": 1.60
   };
   return multipliers[risk];
 }
@@ -24,17 +24,17 @@ export function getOccupationMultiplier(risk: OccupationRisk): number {
 // Medical history multipliers
 export function getMedicalMultiplier(history: MedicalHistory): number {
   const multipliers: Record<MedicalHistory, number> = {
-    "NONE": 1.0,                 // Standard
-    "MINOR_CONDITIONS": 1.15,    // Managed conditions
-    "CHRONIC_DISEASE": 1.45,     // Diabetes, hypertension, etc
-    "SERIOUS_ILLNESS": 1.95      // Cancer history, heart disease, etc
+    "NONE": 1.0,
+    "MINOR_CONDITIONS": 1.15,
+    "CHRONIC_DISEASE": 1.45,
+    "SERIOUS_ILLNESS": 1.95
   };
   return multipliers[history];
 }
 
 // Smoker status multiplier
 export function getSmokerMultiplier(smoker: boolean): number {
-  return smoker ? 1.5 : 1.0;  // 50% premium for smokers
+  return smoker ? 1.5 : 1.0;
 }
 
 // Base premium per $1000 coverage by age band
@@ -71,29 +71,26 @@ export function getAgeBand(age: number): AgeBand {
   return "65_PLUS";
 }
 
-//Calculate overall risk multiplier
+// Calculate overall risk multiplier
 export function calculateRiskMultiplier(riskProfile: RiskProfile): number {
   const healthMult = getHealthMultiplier(riskProfile.healthStatus);
   const occMult = getOccupationMultiplier(riskProfile.occupationRisk);
   const medicalMult = getMedicalMultiplier(riskProfile.medicalHistory);
   const smokerMult = getSmokerMultiplier(riskProfile.smoker ?? false);
 
-  // Multiply all factors, but cap at max 3.0x to prevent extreme rates
   const multiplier = healthMult * occMult * medicalMult * smokerMult;
   return Math.min(multiplier, 3.0);
 }
 
-// Whole Life cash value accumulation (simplified)
-// Grows at ~2.5% annually, represents accumulated cash value
+// Calculate simplified cash value for whole life
 export function calculateCashValue(
   annualPremium: number,
   yearsInForce: number
 ): number {
-  if (yearsInForce < 2) return 0;  // No cash value in first 2 years
-  
-  // Simplified: 60% of premiums paid after 2 years, grows at 2.5%
+  if (yearsInForce < 2) return 0;
+
   const baseCashValue = annualPremium * yearsInForce * 0.60;
   const growthRate = 1.025;
-  
+
   return baseCashValue * Math.pow(growthRate, yearsInForce - 2);
 }

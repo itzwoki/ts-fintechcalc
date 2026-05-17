@@ -9,13 +9,13 @@ import {
 } from "./types";
 
 
-// ✅ Utility: frequency → periods per year
+// Utility: frequency to periods per year
 function getPeriodsPerYear(freq: string): number {
   return freq === "monthly" ? 12 : 4;
 }
 
 
-// ✅ Core: Calculate fixed periodic payment
+// Core: calculate fixed periodic payment
 // Supports normal, balloon percentage, and amortization-period balloon
 function calculateFixedPayment(
   principal: Decimal,
@@ -35,7 +35,7 @@ function calculateFixedPayment(
 
   // Balloon by amortization period
   // Payment calculated using longer amortization schedule
-  // Loan stops at actual term → remaining balance = balloon
+  // Loan stops at actual term, remaining balance is balloon
   if (amortizationPeriods !== undefined) {
     const factor = periodicRate.plus(1).pow(amortizationPeriods);
     return principal
@@ -88,12 +88,12 @@ function calculatePmi(
 }
 
 
-// ✅ Main engine
+// Main engine
 export function calculateAmortization(
   input: AmortizationInput
 ): AmortizationResult {
 
-  // ✅ Validate all inputs
+  // Validate all inputs
   validateAmortizationInput(input);
 
   const {
@@ -116,7 +116,7 @@ export function calculateAmortization(
     decimalPlaces = 2
   } = input;
 
-  // ✅ Balloon only allowed for FULLY_AMORTIZING
+  // Balloon only allowed for FULLY_AMORTIZING
   if (input.balloon && loanType !== "FULLY_AMORTIZING") {
     throw new Error(
       "Balloon configuration only allowed for FULLY_AMORTIZING loans."
@@ -151,13 +151,13 @@ export function calculateAmortization(
     remainingBalance: Decimal;
   }> = [];
 
-  // ✅ O(1) extra payment lookup
+  // O(1) extra payment lookup
   const extraMap = new Map<number, Decimal>();
   extraPayments.forEach(e => {
     extraMap.set(e.period, new Decimal(e.amount));
   });
 
-  // ✅ Deterministic rate resolution
+  // Deterministic rate resolution
   const rateMap = new Map<number, Decimal>();
   rateSchedule.forEach(r => {
     rateMap.set(r.fromPeriod, new Decimal(r.annualInterestRate));
@@ -166,7 +166,7 @@ export function calculateAmortization(
   let activeAnnualRate = new Decimal(annualInterestRate);
   let periodicRate = activeAnnualRate.div(periodsPerYear);
 
-  // ✅ Resolve balloon config
+  // Resolve balloon config
   let balloonAmount: Decimal | undefined;
   let amortizationPeriods: number | undefined;
 
@@ -182,7 +182,7 @@ export function calculateAmortization(
     }
   }
 
-  // ✅ Calculate initial fixed payment
+  // Calculate initial fixed payment
   let fixedPayment =
     loanType === "FULLY_AMORTIZING"
       ? calculateFixedPayment(
@@ -205,12 +205,12 @@ export function calculateAmortization(
       throw new Error(`Balance went negative at period ${period}. Check input parameters.`);
     }
 
-    // ✅ Apply rate change if scheduled
+    // Apply rate change if scheduled
     if (rateMap.has(period)) {
       activeAnnualRate = rateMap.get(period)!;
       periodicRate = activeAnnualRate.div(periodsPerYear);
 
-      // ✅ Recalculate payment preserving balloon config
+      // Recalculate payment preserving balloon config
       if (loanType === "FULLY_AMORTIZING") {
         const remainingPeriods = totalPeriods - period + 1;
 
@@ -231,12 +231,12 @@ export function calculateAmortization(
     let basePayment = new Decimal(0);
     let principalPaid = new Decimal(0);
 
-    // ✅ FULLY_AMORTIZING
+    // FULLY_AMORTIZING
     if (loanType === "FULLY_AMORTIZING") {
       basePayment = fixedPayment;
     }
 
-    // ✅ INTEREST_ONLY
+    // INTEREST_ONLY
     if (loanType === "INTEREST_ONLY") {
       basePayment = interest;
 
@@ -246,7 +246,7 @@ export function calculateAmortization(
       }
     }
 
-    // ✅ BULLET
+    // BULLET
     if (loanType === "BULLET") {
       if (period === totalPeriods) {
         interest = balance.mul(periodicRate);
@@ -255,7 +255,7 @@ export function calculateAmortization(
       }
     }
 
-    // ✅ Extra payment
+    // Extra payment
     const extra = extraMap.get(period) ?? new Decimal(0);
 
     const pmiPayment = calculatePmi(
@@ -269,11 +269,11 @@ export function calculateAmortization(
     const basePaymentThisPeriod = basePayment.plus(extra);
     const totalPaymentThisPeriod = basePaymentThisPeriod.plus(pmiPayment).plus(escrowPerPeriod);
 
-    // ✅ FULLY_AMORTIZING principal = payment - interest
+    // FULLY_AMORTIZING principal = payment - interest
     if (loanType === "FULLY_AMORTIZING") {
       principalPaid = basePaymentThisPeriod.minus(interest);
 
-      // ✅ Negative amortization detection
+      // Negative amortization detection
       if (principalPaid.lte(0)) {
         throw new Error(
           `Negative amortization detected at period ${period}.`
@@ -281,12 +281,12 @@ export function calculateAmortization(
       }
     }
 
-    // ✅ For non-amortizing types, apply extra to principal
+    // For non-amortizing types, apply extra to principal
     if (loanType !== "FULLY_AMORTIZING") {
       principalPaid = principalPaid.plus(extra);
     }
 
-    // ✅ Cap principal at remaining balance
+    // Cap principal at remaining balance
     if (principalPaid.gt(balance)) {
       principalPaid = balance;
     }
@@ -296,7 +296,7 @@ export function calculateAmortization(
     totalPmiPaid = totalPmiPaid.plus(pmiPayment);
     totalEscrowPaid = totalEscrowPaid.plus(escrowPerPeriod);
 
-    // ✅ Apply rounding based on timing policy
+    // Apply rounding based on timing policy
     let outputInterest = interest;
     let outputPayment = basePaymentThisPeriod;
     let outputPrincipal = principalPaid;
@@ -397,7 +397,7 @@ export function calculateAmortization(
     });
   }
 
-  // ✅ Calculate actual balloon payment
+  // Calculate actual balloon payment
   const finalBalance = schedule.length > 0
     ? schedule[schedule.length - 1].remainingBalance
     : 0;

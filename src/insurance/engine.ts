@@ -15,18 +15,17 @@ import {
   InsuranceComparison
 } from "./types";
 
-// ✅ Main insurance premium calculation
 export function calculateInsurancePremium(
   input: InsuranceInput
 ): InsuranceResult {
-
   validateInsuranceInput(input);
 
   const {
     insuranceType,
     age,
     faceAmount,
-    termYears = 20,  // Default for WHOLE_LIFE
+    // Default term for whole life
+    termYears = 20,
     riskProfile,
     coverageDecreaseRate = 0,
     inflationAdjustment = 0,
@@ -35,15 +34,10 @@ export function calculateInsurancePremium(
     decimalPlaces = 2
   } = input;
 
-  // ✅ Calculate risk multiplier
   const riskMultiplier = calculateRiskMultiplier(riskProfile);
-
-  // ✅ Get age band and base premium
   const ageBand = getAgeBand(age);
   const basePremiumPerThousand = getBasePremiumPerThousand(ageBand, insuranceType);
 
-  // ✅ Calculate annual premium
-  // Formula: (faceAmount / 1000) * basePremium * riskMultiplier
   const faceAmountInThousands = new Decimal(faceAmount).div(1000);
   const basePremium = new Decimal(basePremiumPerThousand);
   const riskMult = new Decimal(riskMultiplier);
@@ -56,24 +50,19 @@ export function calculateInsurancePremium(
     .mul(faceAmountInThousands);
 
   const waiverPremium = riders.waiverOfPremium ? baseAnnualPremium.mul(0.1) : new Decimal(0);
-
   const annualPremium = baseAnnualPremium.plus(riderPremium).plus(waiverPremium);
 
-  // ✅ Build schedule
   const schedule: InsuranceScheduleItem[] = [];
   let cumulativePremiums = new Decimal(0);
   let currentCoverage = new Decimal(faceAmount);
   let currentAge = age;
 
-  const policyYears = insuranceType === "TERM_LIFE" ? termYears : 50;  // Whole life tracks to age 65+
+  const policyYears = insuranceType === "TERM_LIFE" ? termYears : 50;
 
   for (let year = 1; year <= policyYears; year++) {
-
-    // ✅ Recalculate for age band changes
     let currentYearPremium = annualPremium;
 
     if (currentAge !== age && insuranceType === "TERM_LIFE") {
-      // Age band might have changed
       const newAgeBand = getAgeBand(currentAge);
       const newBase = getBasePremiumPerThousand(newAgeBand, insuranceType);
       currentYearPremium = faceAmountInThousands
@@ -83,7 +72,6 @@ export function calculateInsurancePremium(
 
     cumulativePremiums = cumulativePremiums.plus(currentYearPremium);
 
-    // ✅ Apply coverage decrease
     if (coverageDecreaseRate > 0) {
       const decreaseRate = new Decimal(coverageDecreaseRate);
       currentCoverage = currentCoverage.mul(
@@ -91,7 +79,6 @@ export function calculateInsurancePremium(
       );
     }
 
-    // ✅ Apply inflation adjustment
     if (inflationAdjustment > 0) {
       const inflRate = new Decimal(inflationAdjustment);
       currentCoverage = currentCoverage.mul(
@@ -99,12 +86,10 @@ export function calculateInsurancePremium(
       );
     }
 
-    // ✅ Calculate cost per $1000 coverage
     const costPerThousand = currentCoverage.gt(0)
       ? currentYearPremium.mul(1000).div(currentCoverage)
       : new Decimal(0);
 
-    // ✅ Calculate cash value for Whole Life
     let cashValue: Decimal | undefined;
     if (insuranceType === "WHOLE_LIFE" && year >= 2) {
       cashValue = new Decimal(
@@ -112,7 +97,6 @@ export function calculateInsurancePremium(
       );
     }
 
-    // ✅ Format output
     let outputPremium = applyRounding(
       currentYearPremium,
       decimalPlaces,
@@ -156,7 +140,6 @@ export function calculateInsurancePremium(
     currentAge++;
   }
 
-  // ✅ Calculate final metrics
   const totalPremiums = applyRounding(
     cumulativePremiums,
     decimalPlaces,
@@ -213,19 +196,15 @@ export function calculateInsurancePremium(
   };
 }
 
-// ✅ Compare Term Life vs Whole Life for same person
 export function compareInsuranceOptions(
   input: InsuranceInput
 ): InsuranceComparison {
-
-  // ✅ Calculate Term Life
   const termResult = calculateInsurancePremium({
     ...input,
     insuranceType: "TERM_LIFE",
     termYears: input.termYears ?? 20
   });
 
-  // ✅ Calculate Whole Life
   const wholeResult = calculateInsurancePremium({
     ...input,
     insuranceType: "WHOLE_LIFE"
@@ -237,7 +216,6 @@ export function compareInsuranceOptions(
   const totalDifference = new Decimal(wholeResult.totalPremiumsOverTerm)
     .minus(termResult.totalPremiumsOverTerm);
 
-  // ✅ Recommendation logic
   let recommendation = "";
   if (annualDifference.lt(300)) {
     recommendation = "Whole Life may be worth considering for lifetime protection and cash value buildup.";
