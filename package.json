@@ -1,5 +1,5 @@
 {
-  "name": "@waqas/fintechcalc",
+  "name": "@itzwoki/fintechcalc",
   "version": "1.0.0",
   "description": "High precision financial calculation library",
   "main": "dist/index.js",
@@ -17,7 +17,7 @@
   "homepage": "https://github.com/itzwoki/ts-fintechcalc#readme",
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "dev": "vitest",
     "prepublishOnly": "npm run build && npm test"
